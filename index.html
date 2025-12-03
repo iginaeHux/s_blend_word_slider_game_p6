@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>✅ S-Blend Connector (CUE WORD MASTER) ✅</title>
+    <title>S-Blend Connector (Production Ready)</title>
     <style>
         /* BASE STYLES */
         body {
@@ -12,7 +12,6 @@
             color: #4a148c;
             text-align: center;
             padding: 20px;
-            touch-action: none; 
         }
 
         h1 {
@@ -44,15 +43,17 @@
             overflow: hidden; 
             user-select: none; 
             min-height: 100px;
+            /* FIX: Allows vertical scrolling on the row itself */
+            touch-action: pan-y; 
         }
         
-        /* CUE WORD - VISIBLE FROM THE START, BUT STYLED */
+        /* CUE WORD - VISIBLE FROM THE START */
         .solved-word-cue {
             position: absolute;
             top: 5px;
             left: 50%;
             transform: translateX(-50%);
-            font-size: 1.5em; /* Smaller cue word initially */
+            font-size: 1.5em; 
             font-weight: 700;
             color: #ff70a6; 
             z-index: 5;
@@ -117,6 +118,8 @@
             font-size: 1.5em;
             color: white;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            /* FIX: Allows the handle to only handle X-axis gestures and let Y-axis scroll */
+            touch-action: pan-y manipulation; 
         }
         
         /* ACTIVE ANIMATION */
@@ -403,10 +406,7 @@
                 // 3. PERMANENT LOCK: Set the data attribute, which triggers the CSS overlay/cue
                 sliderRow.setAttribute('data-is-solved', 'true');
 
-                // 4. Update the solved word cue text (This is redundant but ensures maximum visibility)
-                // The text is already correct, but this triggers the visual transformation via CSS.
-                
-                // 5. Show the full word reward pop-up
+                // 4. Show the full word reward pop-up
                 showReward(activeHandle.dataset.word);
             } else {
                 // Reset the handle and line to the start position
