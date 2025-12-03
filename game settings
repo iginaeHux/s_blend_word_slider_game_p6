@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>✅ S-Blend Connector (CUE WORD MASTER) ✅</title>
+    <style>
+        /* BASE STYLES */
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background-color: #fce4ec; 
+            color: #4a148c;
+            text-align: center;
+            padding: 20px;
+            touch-action: none; 
+        }
+
+        h1 {
+            font-size: 3.5em;
+            color: #ff9f1c; 
+            text-shadow: 3px 3px #fff176; 
+            margin-bottom: 50px;
+        }
+
+        #slider-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        /* FLEX LAYOUT */
+        .word-slider {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 40px;
+            padding: 20px;
+            border-radius: 15px;
+            background-color: #f0f4c3; 
+            position: relative;
+            overflow: hidden; 
+            user-select: none; 
+            min-height: 100px;
+        }
+        
+        /* CUE WORD - VISIBLE FROM THE START, BUT STYLED */
+        .solved-word-cue {
+            position: absolute;
+            top: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1.5em; /* Smaller cue word initially */
+            font-weight: 700;
+            color: #ff70a6; 
+            z-index: 5;
+            transition: all 0.5s;
+        }
+
+        .sound-start, .sound-end {
+            font-size: 2.5em;
+            font-weight: bold;
+            padding: 10px 20px;
+            border-radius: 10px;
+            z-index: 2;
+            transition: opacity 0.5s;
+        }
+
+        .sound-start {
+            background-color: #a7ffeb;
+            color: #00897b;
+        }
+
+        .sound-end {
+            background-color: #ffcdd2; 
+            color: #d81b60;
+        }
+
+        /* TRACK AND HANDLE SETUP */
+        .slider-track {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 1;
+            padding: 0 20px; 
+        }
+
+        .connecting-line {
+            height: 10px;
+            background-color: #ffccbc; 
+            transition: width 0.1s ease-out;
+            margin-left: 20px;
+            margin-right: 20px;
+        }
+
+        .slider-handle {
+            width: 80px; 
+            height: 80px;
+            border-radius: 50%;
+            background-color: #ff6b6b; 
+            border: 5px solid white;
+            position: absolute;
+            left: 20px; 
+            cursor: grab;
+            transition: box-shadow 0.2s, background-color 0.4s;
+            z-index: 3;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            color: white;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* ACTIVE ANIMATION */
+        @keyframes pulse-glow {
+            0% { box-shadow: 0 0 5px 0px rgba(255, 107, 107, 0.7); }
+            50% { box-shadow: 0 0 20px 5px rgba(255, 107, 107, 1); }
+            100% { box-shadow: 0 0 5px 0px rgba(255, 107, 107, 0.7); }
+        }
+        .slider-handle.active {
+            animation: pulse-glow 1s infinite;
+            cursor: grabbing;
+        }
+
+        /* 2. Invisible Overlay (The true lock) */
+        .solved-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.7); 
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.5s;
+            z-index: 4;
+            border-radius: 15px;
+        }
+
+        /* 3. Success state applied to the container */
+        .word-slider[data-is-solved="true"] .solved-overlay {
+            opacity: 1; /* Show the overlay */
+            pointer-events: all; /* LOCK: Overlay catches all clicks */
+        }
+        .word-slider[data-is-solved="true"] .solved-word-cue {
+            font-size: 4em; /* Make the cue word giant */
+            color: #4CAF50; /* Success color */
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
+        .word-slider[data-is-solved="true"] .sound-start,
+        .word-slider[data-is-solved="true"] .sound-end,
+        .word-slider[data-is-solved="true"] .slider-handle {
+            opacity: 0; /* Hide active elements */
+        }
+
+        /* Reward Pop-up remains the same */
+        #reward-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 20px;
+            background-color: #ffdd00; 
+            border: 10px solid #ff70a6; 
+            border-radius: 30px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+            z-index: 1000;
+            display: none;
+            text-align: center;
+        }
+        #reward-popup img {
+            width: 200px;
+            height: 200px;
+            border-radius: 10px;
+        }
+        #reward-popup h3 {
+            color: #d81b60;
+            margin-top: 10px;
+            font-size: 2em;
+        }
+
+    </style>
+</head>
+<body>
+
+    <h1>Drag the Sounds to Blend! 🦄</h1>
+
+    <div id="slider-container">
+        
+        <div class="word-slider" id="slider-ski">
+            <div class="solved-overlay"></div>
+            <span class="solved-word-cue">SKI</span>
+            <span class="sound-start">S</span>
+            <span class="sound-end" data-rest="KI">KI</span>
+            <div class="slider-track">
+                <div class="connecting-line" style="width: 0;"></div>
+            </div>
+            <div class="slider-handle" data-word="SKI">⛷️</div>
+        </div>
+
+        <div class="word-slider" id="slider-stop">
+            <div class="solved-overlay"></div>
+            <span class="solved-word-cue">STOP</span>
+            <span class="sound-start">S</span>
+            <span class="sound-end" data-rest="TOP">TOP</span>
+            <div class="slider-track">
+                <div class="connecting-line" style="width: 0;"></div>
+            </div>
+            <div class="slider-handle" data-word="STOP">🛑</div>
+        </div>
+        
+        <div class="word-slider" id="slider-swim">
+            <div class="solved-overlay"></div>
+            <span class="solved-word-cue">SWIM</span>
+            <span class="sound-start">S</span>
+            <span class="sound-end" data-rest="WIM">WIM</span>
+            <div class="slider-track">
+                <div class="connecting-line" style="width: 0;"></div>
+            </div>
+            <div class="slider-handle" data-word="SWIM">🏊</div>
+        </div>
+        
+        <div class="word-slider" id="slider-spill">
+            <div class="solved-overlay"></div>
+            <span class="solved-word-cue">SPILL</span>
+            <span class="sound-start">S</span>
+            <span class="sound-end" data-rest="PILL">PILL</span>
+            <div class="slider-track">
+                <div class="connecting-line" style="width: 0;"></div>
+            </div>
+            <div class="slider-handle" data-word="SPILL">🥛</div>
+        </div>
+        
+        <div class="word-slider" id="slider-smell">
+            <div class="solved-overlay"></div>
+            <span class="solved-word-cue">SMELL</span>
+            <span class="sound-start">S</span>
+            <span class="sound-end" data-rest="MELL">MELL</span>
+            <div class="slider-track">
+                <div class="connecting-line" style="width: 0;"></div>
+            </div>
+            <div class="slider-handle" data-word="SMELL">👃</div>
+        </div>
+
+        <div class="word-slider" id="slider-slide">
+            <div class="solved-overlay"></div>
+            <span class="solved-word-cue">SLIDE</span>
+            <span class="sound-start">S</span>
+            <span class="sound-end" data-rest="LIDE">LIDE</span>
+            <div class="slider-track">
+                <div class="connecting-line" style="width: 0;"></div>
+            </div>
+            <div class="slider-handle" data-word="SLIDE">💡</div>
+        </div>
+        
+        <div class="word-slider" id="slider-smile">
+            <div class="solved-overlay"></div>
+            <span class="solved-word-cue">SMILE</span>
+            <span class="sound-start">S</span>
+            <span class="sound-end" data-rest="MILE">MILE</span>
+            <div class="slider-track">
+                <div class="connecting-line" style="width: 0;"></div>
+            </div>
+            <div class="slider-handle" data-word="SMILE">😊</div>
+        </div>
+        
+        <div class="word-slider" id="slider-snack">
+            <div class="solved-overlay"></div>
+            <span class="solved-word-cue">SNACK</span>
+            <span class="sound-start">S</span>
+            <span class="sound-end" data-rest="NACK">NACK</span>
+            <div class="slider-track">
+                <div class="connecting-line" style="width: 0;"></div>
+            </div>
+            <div class="slider-handle" data-word="SNACK">🥨</div>
+        </div>
+        
+        <div class="word-slider" id="slider-skip">
+            <div class="solved-overlay"></div>
+            <span class="solved-word-cue">SKIP</span>
+            <span class="sound-start">S</span>
+            <span class="sound-end" data-rest="KIP">KIP</span>
+            <div class="slider-track">
+                <div class="connecting-line" style="width: 0;"></div>
+            </div>
+            <div class="slider-handle" data-word="SKIP">🤸</div>
+        </div>
+        
+        <div class="word-slider" id="slider-swirl">
+            <div class="solved-overlay"></div>
+            <span class="solved-word-cue">SWIRL</span>
+            <span class="sound-start">S</span>
+            <span class="sound-end" data-rest="WIRL">WIRL</span>
+            <div class="slider-track">
+                <div class="connecting-line" style="width: 0;"></div>
+            </div>
+            <div class="slider-handle" data-word="SWIRL">🌀</div>
+        </div>
+        
+    </div>
+
+    <div id="reward-popup">
+        <h3>You Did It, Brilliant!</h3>
+        <img id="reward-gif" src="data:image/gif;base64,R0lGODlhIAAgAPcAAAAAAQIAAgMDAQMEBAQFBAYGBgcHBwQIBQYJCAoLCAwNDA4ODw8PEBESExQTFBUVFRYWFhcXFxgYGBkZGRoaGhsbGxwcHB0dHR4eHh8fHwAAAAECAgMEBAUGBgcHBwgICAoLCwwMDA4ODg8PEBQRERQUFhYWGBoaHBwdHh4eHh8fHxAQEhQUFRYWGBgZGRoaHBwcHh4fICEhIiIjIyQkJCUlJSYmJicnJykpKSwsLC0tLS4uLi8vLzAwMDExMTIyMjMzMzQ0NDU1NTY2Njc3Nzg4ODk5OTo6Ojs7Ozw8PD09PT4+Pj8/P0BAQEJCQkNDQ0REREVFRUZGRkdHR0hISElJSUpKSktLS0xMTExNTU5OTk9PT1BQUFFRUVJSUlNTU1RUVFVVVVZWVldXV1hYWFlZWVpaWltbW1xcXF1dXV5eXl9fX2BgYGFhYWJiYmNjY2RkZGVlZWZmZmdnZ2hoaGlpaWpqamtra2xsbG1tbW5ubm9vb3BwcHFxcXJycnNzc3R0dHV1dXZ2dnd3d3h4eHl5eXp6enx8fH9/f4CAgIGBgYKCgoODg4SEhIWFhYaGhoeHh4iIiImJiYqKiouLi4yMjI6Ojo+Pj5GRkpKSkqKiouLi4yMjI6Ojo+Pj5GRkpKSkpeXl5mZmZqampubm5ycnJ2dnZ6enp+fn6CgoKGhoaKioqOjo6SkpKWlpaampqenp6ioqKmpqaurq6ysrK2trSwsLC0tLS4uLi8vLzAwMDExMTIyMjMzMzQ0NDU1NTY2Njc3Nzg4ODk5OTo6Ojs7Ozw8PD09PT4+Pj8/P0BAQEJCQkNDQ0REREVFRUZGRkdHR0hISElJSUpKSktLS0xMTExNTU5OTk9PT1BQUFFRUVJSUlNTU1RUVFVVVVZWVldXV1hYWFlZWVpaWltbW1xcXF1dXV5eXl9fX2BgYGFhYWJiYmNjY2RkZGVlZWZmZmdnZ2hoaGlpaWpqamtra2xsbG1tbW5ubm9vb3BwcHFxcXJycnNzc3R0dHV1dXZ2dnd3d3h4eHl5eXp6enx8fH9/f4CAgIGBgYKCgoODg4SEhIWFhYaGhoeHh4iIiImJiYqKiouLi4yMjI6Ojo+Pj5GRkpKSkqKiouLi4yMjI6Ojo+Pj5GRkpKSkpeXl5mZmZqampubm5ycnJ2dnZ6enp+fn6CgoKGhoaKioqOjo6SkpKWlpaampqenp6ioqKmpqaurq6ysrK2trSwsLC0tLS4uLi8vLzAwMDExMTIyMjMzMzQ0NDU1NTY2Njc3Nzg4ODk5OTo6Ojs7Ozw8PD09PT4+Pj8/P0BAQEJCQkNDQ0REREVFRUZGRkdHR0hISElJSUpKSktLS0xMTExNTU5OTk9PT1BQUFFRUVJSUlNTU1RUVFVVVVZWVldXV1hYWFlZWVpaWltbW1xcXF1dXV5eXl9fX2BgYGFhYWJiYmNjY2RkZGVlZWZmZmdnZ2hoaGlpaWpqamtra2xsbG1tbW5ubm9vb3BwcHFxcXJycnNzc3R0dHV1dXZ2dnd3d3h4eHl5eXp6enx8fH9/f4CAgIGBgYKCgoODg4SEhIWFhYaGhoeHh4iIiImJiYqKiouLi4yMjI6Ojo+Pj5GRkpKSkqKiouLi4yMjI6Ojo+Pj5GRkpKSkpeXl5mZmZqampubm5ycnJ2dnZ6enp+fn6CgoKGhoaKioqOjo6SkpKWlpaampqenp6ioqKmpqaurq6ysrK2trQAAAP////f39/X19f7+/gAAACH5BAEAAMsALAAAAAAgACAAAAYjwJAgHBqJRKIwMBiMxoFArM/mU8iYcTpcX6C8eF/K65Mh9c03t8/3EBBsEAsFh8NisVi8TmOR0O5l2+Zt9/l6n33+3t/gYKFhoeIiYqLjI2Oj5CRkpOUlZaXmJmam5ydnp+goaKjpKWmp6ipqquqrwEAOw==" alt="Embedded Celebration GIF">
+    </div>
+
+    <script>
+        const handles = document.querySelectorAll('.slider-handle');
+        const popup = document.getElementById('reward-popup');
+        
+        let activeHandle = null;
+        let startX; 
+        let initialHandleLeft; 
+        const padding = 20;
+
+        // --- Event Listeners for Pointer Events ---
+        handles.forEach(handle => {
+            handle.addEventListener('pointerdown', startDrag);
+        });
+
+        document.addEventListener('pointermove', drag);
+        document.addEventListener('pointerup', endDrag);
+
+        // --- Start Drag Function ---
+        function startDrag(e) {
+            const sliderRow = e.currentTarget.closest('.word-slider');
+            // Crucial: If the row is solved, ignore the pointerdown event
+            if (sliderRow.getAttribute('data-is-solved') === 'true') return; 
+
+            e.preventDefault(); 
+            e.currentTarget.setPointerCapture(e.pointerId); 
+
+            activeHandle = e.currentTarget;
+            activeHandle.classList.add('active');
+            
+            const style = window.getComputedStyle(activeHandle);
+            initialHandleLeft = parseFloat(style.left); 
+            startX = e.clientX;
+        }
+
+        // --- Drag Function ---
+        function drag(e) {
+            if (!activeHandle) return;
+            
+            const dx = e.clientX - startX;
+            let newLeft = initialHandleLeft + dx;
+            
+            const sliderRow = activeHandle.closest('.word-slider');
+            const sliderWidth = sliderRow.offsetWidth;
+            const handleWidth = activeHandle.offsetWidth;
+            
+            // Calculate limits based on the slider width and padding
+            const maxLeft = sliderWidth - handleWidth - padding;
+            const minLeft = padding; 
+            
+            // Constrain movement
+            newLeft = Math.max(minLeft, Math.min(newLeft, maxLeft)); 
+
+            activeHandle.style.left = `${newLeft}px`;
+
+            // Update connecting line width
+            const connectingLine = sliderRow.querySelector('.connecting-line');
+            connectingLine.style.width = `${newLeft - padding + (handleWidth / 2)}px`;
+
+            startX = e.clientX;
+            initialHandleLeft = newLeft;
+        }
+
+        // --- End Drag Function (The LOCK) ---
+        function endDrag(e) {
+            if (!activeHandle) return;
+            
+            activeHandle.classList.remove('active');
+            e.currentTarget.releasePointerCapture(e.pointerId); 
+
+            const sliderRow = activeHandle.closest('.word-slider');
+            
+            const handleLeft = parseFloat(activeHandle.style.left);
+            const sliderWidth = sliderRow.offsetWidth;
+            const handleWidth = activeHandle.offsetWidth;
+            const maxLeft = sliderWidth - handleWidth - padding;
+
+            // Check if the handle is close to the end (90% of the max distance)
+            const isSuccess = handleLeft >= (maxLeft * 0.9);
+
+            if (isSuccess) {
+                // 1. Snap the handle right to the end
+                activeHandle.style.left = `${maxLeft}px`;
+                
+                // 2. Lock the line connection visually
+                const connectingLine = sliderRow.querySelector('.connecting-line');
+                connectingLine.style.width = `${maxLeft - padding + (handleWidth / 2)}px`; 
+
+                // 3. PERMANENT LOCK: Set the data attribute, which triggers the CSS overlay/cue
+                sliderRow.setAttribute('data-is-solved', 'true');
+
+                // 4. Update the solved word cue text (This is redundant but ensures maximum visibility)
+                // The text is already correct, but this triggers the visual transformation via CSS.
+                
+                // 5. Show the full word reward pop-up
+                showReward(activeHandle.dataset.word);
+            } else {
+                // Reset the handle and line to the start position
+                activeHandle.style.left = `${padding}px`;
+                sliderRow.querySelector('.connecting-line').style.width = '0';
+            }
+            
+            activeHandle = null;
+        }
+        
+        // --- Reward Logic (CONFIRMED TO SHOW FULL WORD) ---
+        function showReward(word) {
+            popup.querySelector('h3').textContent = `YES! You Blended ${word.toUpperCase()}! 👏`;
+            popup.style.display = 'block';
+
+            // Hide the popup after 3 seconds
+            setTimeout(() => {
+                popup.style.display = 'none';
+            }, 3000);
+        }
+
+    </script>
+
+</body>
+</html>
